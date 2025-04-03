@@ -50,6 +50,17 @@ if ( !is_dir($src_path) ) {
 }
 
 /*
+ * Create default directories.
+ */
+$directories = array('assets');
+foreach ( $directories as $directory ) {
+    if ( !is_dir($directory) ) {
+        mkdir($directory, 0755, true);
+        echo "✅ Created the '{$directory}' directory.\n";
+    }
+}
+
+/*
  * Generate the required files.
  */
 // Main plugin file.
@@ -279,17 +290,6 @@ file_put_contents($src_path . 'DependenciesCheck.php', $dependencies_check_conte
 echo "✅ Created the 'DependenciesCheck' class.\n";
 
 /*
- * Create default directories.
- */
-$directories = array('assets', 'assets/js', 'assets/js/front');
-foreach ( $directories as $directory ) {
-    if ( !is_dir($directory) ) {
-        mkdir($directory, 0755, true);
-        echo "✅ Created the '{$directory}' directory.\n";
-    }
-}
-
-/*
  * Update composer.json.
  */
 $composer_path = __DIR__ . '/../composer.json';
@@ -313,15 +313,15 @@ echo implode("\n", $output) . "\n";
 /*
  * Whether to delete the 'scripts' folder.
  */
-$delete_scripts_folder = strtolower(prompt('Do you want to delete the "scripts" folder? (yes/no)', 'yes'));
+$delete_scripts_folder = strtolower(prompt("Do you want to delete the 'scripts' folder? (yes/no)", 'yes'));
 if ( in_array($delete_scripts_folder, array('yes', 'y')) ) {
-    $scriptsFolderPath = __DIR__ . '/scripts';
-    if (is_dir($scriptsFolderPath)) {
+    $scripts_folder_path = 'scripts';
+    if ( is_dir($scripts_folder_path) ) {
         echo "🔄 Deleting the 'scripts' folder...\n";
-        exec("rm -rf {$scriptsFolderPath}");
-        echo "✅ \"scripts\"' folder deleted.\n";
+        exec("rm -rf {$scripts_folder_path}");
+        echo "✅ 'scripts' folder deleted.\n";
     } else {
-        echo "⚠️ The \"scripts\"' folder does not exist.\n";
+        echo "⚠️ The 'scripts' folder does not exist.\n";
     }
 }
 
