@@ -1,0 +1,22 @@
+{
+  "name": "cristeaioan/wp-plugin-starter",
+  "description": "A starter template for WordPress plugins with dynamic setup.",
+  "type": "project",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "DummyNamespace\\": "src/"
+    }
+  },
+  "scripts": {
+    "post-create-project-cmd": [
+      "php scripts/setup.php"
+    ]
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/cristeaioan/wp-plugin-starter"
+    }
+  ]
+}
