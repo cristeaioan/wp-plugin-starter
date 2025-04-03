@@ -8,10 +8,5 @@
     "psr-4": {
       "DummyNamespace\\": "src/"
     }
-  },
-  "scripts": {
-    "post-create-project-cmd": [
-      "php scripts/setup.php"
-    ]
   }
 }

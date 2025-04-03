@@ -11,8 +11,9 @@ function prompt( $text, $default = '' ) {
  */
 $plugin_name = prompt('Plugin name', 'Plugin Name');
 $plugin_description = prompt('Plugin description', 'Plugin Description');
+$plugin_uri = prompt('Plugin URL', '');
 $plugin_author = prompt('Author', '');
-$plugin_author_uri = prompt('Author URI', '');
+$plugin_author_uri = prompt('Author URL', '');
 
 $namespace_input = prompt('Namespace', 'TagDiv\PluginName');
 $namespace = trim($namespace_input, '\\');
@@ -24,8 +25,8 @@ $add_dependent_plugins = strtolower(prompt('Add dependent plugins (yes/no)?', 'n
 $dependent_plugins = array();
 if ( in_array($add_dependent_plugins, array('yes', 'y')) ) {
     do {
-        $dependent_plugin_name = prompt('→ Plugin name (e.g. tagDiv Composer)');
-        $dependent_plugin_path = prompt('→ Plugin path (e.g. td-composer/td-composer.php)');
+        $dependent_plugin_name = prompt('→ Plugin name');
+        $dependent_plugin_path = prompt('→ Plugin path');
 
         if ( $dependent_plugin_name && $dependent_plugin_path ) {
             $dependent_plugins[] = array(
@@ -59,8 +60,8 @@ $plugin_file_contents = <<<PHP
 <?php
 /*
 	Plugin Name: {$plugin_name}
-	Plugin URI: https://tagdiv.com
-	Description: {$plugin_description}.
+	Plugin URI: {$plugin_uri}
+	Description: {$plugin_description}
 	Author: {$plugin_author}
 	Version: 1.0.0
 	Author URI: {$plugin_author_uri}
@@ -68,18 +69,38 @@ $plugin_file_contents = <<<PHP
 
 namespace {$namespace};
 
+/**
+ * Plugin name.
+ *
+ * @since 1.0.0
+ */
 if ( !defined( '{$plugin_const_prefix}_PLUGIN_NAME' ) ) {
     define( '{$plugin_const_prefix}_PLUGIN_NAME', '{$plugin_name}' );
 }
 
+/**
+ * Plugin version.
+ *
+ * @since 1.0.0
+ */
 if ( !defined( '{$plugin_const_prefix}_PLUGIN_VER' ) ) {
     define( '{$plugin_const_prefix}_PLUGIN_VER', '1.0.0' );
 }
 
+/**
+ * Plugin main file path.
+ *
+ * @since 1.0.0
+ */
 if ( !defined( '{$plugin_const_prefix}_PLUGIN_FILE' ) ) {
     define( '{$plugin_const_prefix}_PLUGIN_FILE', __FILE__ );
 }
 
+/**
+ * Autoloader.
+ *
+ * @since 1.0.0
+ */
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
@@ -114,10 +135,39 @@ $core_class_contents = <<<PHP
 namespace {$namespace};
 
 class Core {
+    
+    /**
+     * URL to the plugin directory.
+     *
+     * @since 1.0.0
+     *
+     * @var string
+     */
     public \$plugin_url;
+
+    /**
+     * Path to the plugin directory.
+     *
+     * @since 1.0.0
+     *
+     * @var string
+     */
     public \$plugin_path;
+    
+    /**
+     * URL to the plugin assets directory.
+     *
+     * @since 1.0.0
+     *
+     * @var string
+     */
     public \$assets_url;
 
+    /**
+     * Class constructor.
+     *
+     * @since 1.0.0
+     */
     public function __construct() {
         \$this->plugin_url  = rtrim(plugin_dir_url( __DIR__ ), '/\\\');
         \$this->plugin_path = rtrim(plugin_dir_path( __DIR__ ), '/\\\');
@@ -125,9 +175,19 @@ class Core {
         \$this->init();
     }
 
+    /**
+     * Initializes the class.
+     *
+     * @since 1.0.0
+     */
     public function init() {
+        /*
+         * Check for theme and plugins dependencies.
+         * If at least one of them is not active, then put a full stop to this plugin.
+         */
         new DependenciesCheck();
     }
+
 }
 PHP;
 
@@ -135,13 +195,16 @@ file_put_contents($src_path . 'Core.php', $core_class_contents);
 echo "✅ Created the Core class.\n";
 
 // Dependencies check class.
-$dependent_plugins_array_code = "array(\n";
-foreach ( $dependent_plugins as $plugin ) {
-    $name = addslashes($plugin['name']);
-    $path = addslashes($plugin['path']);
-    $dependent_plugins_array_code .= "\t\t\tarray(\n\t\t\t\t'name' => '{$name}',\n\t\t\t\t'path' => '{$path}'\n\t\t\t),\n";
+$dependent_plugins_array_code = "array()";
+if ( !empty($dependent_plugins) ) {
+    $dependent_plugins_array_code = "array(\n";
+    foreach ( $dependent_plugins as $plugin ) {
+        $name = addslashes($plugin['name']);
+        $path = addslashes($plugin['path']);
+        $dependent_plugins_array_code .= "\t\t\tarray(\n\t\t\t\t'name' => '{$name}',\n\t\t\t\t'path' => '{$path}'\n\t\t\t),\n";
+    }
+    $dependent_plugins_array_code .= "\t)";
 }
-$dependent_plugins_array_code .= "\t)";
 
 $dependencies_check_contents = <<<PHP
 <?php
@@ -167,36 +230,38 @@ class DependenciesCheck {
         \$dependent_plugins = {$dependent_plugins_array_code};
         \$dependent_plugins_inactive = array();
 
-        foreach ( \$dependent_plugins as \$dependent_plugin ) {
-            if( !is_plugin_active( \$dependent_plugin['path'] ) ) {
-                \$dependent_plugins_inactive[] = \$dependent_plugin;
+        if( !empty(\$dependent_plugins) ) {
+            foreach ( \$dependent_plugins as \$dependent_plugin ) {
+                if( !is_plugin_active( \$dependent_plugin['path'] ) ) {
+                    \$dependent_plugins_inactive[] = \$dependent_plugin;
+                }
             }
         }
 
         if ( !\$dependent_theme_active || !empty( \$dependent_plugins_inactive ) ) {
             add_action( 'admin_notices', function () use ( \$dependent_theme_name, \$dependent_theme_active, \$dependent_plugins_inactive ) {
                 \$buffy = '<div class="notice notice-error is-dismissible td-plugins-deactivated-notice">';
-                \$buffy .= '<p>';
-                \$buffy .= 'The <b>' . {$plugin_const_prefix}_PLUGIN_NAME . '</b> plugin requires the ';
-
-                if ( !\$dependent_theme_active ) {
-                    \$buffy .= ' <b>' . \$dependent_theme_name . '</b> theme';
-                }
-
-                if ( !empty( \$dependent_plugins_inactive ) ) {
-                    \$buffy .= !\$dependent_theme_active ? ' and ' : '';
-                    foreach ( \$dependent_plugins_inactive as \$key => \$dependent_plugin ) {
-                        \$buffy .= '<b>' . \$dependent_plugin['name'] . '</b>';
-                        end(\$dependent_plugins_inactive);
-                        if( \$key !== key( \$dependent_plugins_inactive ) ) {
-                            \$buffy .= ', ';
+                    \$buffy .= '<p>';
+                        \$buffy .= 'The <b>' . {$plugin_const_prefix}_PLUGIN_NAME . '</b> plugin requires the ';
+        
+                        if ( !\$dependent_theme_active ) {
+                            \$buffy .= ' <b>' . \$dependent_theme_name . '</b> theme';
                         }
-                    }
-                    \$buffy .= ' plugin' . ( count( \$dependent_plugins_inactive ) > 1 ? 's' : '' );
-                }
-
-                \$buffy .= '!';
-                \$buffy .= '</p>';
+        
+                        if ( !empty( \$dependent_plugins_inactive ) ) {
+                            \$buffy .= !\$dependent_theme_active ? ' and ' : '';
+                            foreach ( \$dependent_plugins_inactive as \$key => \$dependent_plugin ) {
+                                \$buffy .= '<b>' . \$dependent_plugin['name'] . '</b>';
+                                end(\$dependent_plugins_inactive);
+                                if( \$key !== key( \$dependent_plugins_inactive ) ) {
+                                    \$buffy .= ', ';
+                                }
+                            }
+                            \$buffy .= ' plugin' . ( count( \$dependent_plugins_inactive ) > 1 ? 's' : '' );
+                        }
+        
+                        \$buffy .= '!';
+                    \$buffy .= '</p>';
                 \$buffy .= '</div>';
                 echo \$buffy;
             });
@@ -223,7 +288,6 @@ $composer_json['name'] = strtolower(explode('\\', $namespace)[0]) . '/' . $plugi
 $composer_json['autoload']['psr-4'] = [
     "{$namespace}\\" => "src/"
 ];
-unset($composer_json['scripts']);
 
 file_put_contents($composer_path, json_encode($composer_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 echo "🔁 Updated composer.json\n";
