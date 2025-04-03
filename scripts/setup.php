@@ -31,6 +31,8 @@ if ( !is_dir($src_path) ) {
  * Generate the required files.
  */
 // Main plugin file.
+$global_function_name = str_replace('-', '_', $plugin_slug);
+
 $plugin_file = __DIR__ . "/../{$plugin_slug}.php";
 $plugin_file_contents = <<<PHP
 <?php
@@ -61,7 +63,14 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
 
-function {str_replace('-', '_', $plugin_slug)}() {
+/**
+ * Global function holder.
+ *
+ * @since 1.0.0
+ *
+ * @return Core
+ */
+function {$global_function_name}() {
     static \$core;
 
     if ( !isset(\$core) ) {
@@ -71,7 +80,7 @@ function {str_replace('-', '_', $plugin_slug)}() {
     return \$core;
 }
 
-{str_replace('-', '_', $plugin_slug)}();
+{$global_function_name}();
 PHP;
 
 file_put_contents($plugin_file, $plugin_file_contents);
@@ -89,8 +98,8 @@ class Core {
     public \$assets_url;
 
     public function __construct() {
-        \$this->plugin_url  = rtrim(plugin_dir_url( __DIR__ ), '/\\');
-        \$this->plugin_path = rtrim(plugin_dir_path( __DIR__ ), '/\\');
+        \$this->plugin_url  = rtrim(plugin_dir_url( __DIR__ ), '/\\\');
+        \$this->plugin_path = rtrim(plugin_dir_path( __DIR__ ), '/\\\');
         \$this->assets_url = \$this->plugin_url . '/assets';
         \$this->init();
     }
