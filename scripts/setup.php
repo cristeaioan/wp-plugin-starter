@@ -299,6 +299,7 @@ $composer_json['name'] = strtolower(explode('\\', $namespace)[0]) . '/' . $plugi
 $composer_json['autoload']['psr-4'] = [
     "{$namespace}\\" => "src/"
 ];
+unset($composer_json['scripts']);
 
 file_put_contents($composer_path, json_encode($composer_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 echo "🔁 Updated composer.json\n";
@@ -313,7 +314,7 @@ echo implode("\n", $output) . "\n";
 /*
  * Whether to delete the 'scripts' folder.
  */
-$delete_scripts_folder = strtolower(prompt("Do you want to delete the 'scripts' folder? (yes/no)", 'yes'));
+$delete_scripts_folder = strtolower(prompt("\nDo you want to delete the 'scripts' folder? (yes/no)", 'yes'));
 if ( in_array($delete_scripts_folder, array('yes', 'y')) ) {
     $scripts_folder_path = 'scripts';
     if ( is_dir($scripts_folder_path) ) {
