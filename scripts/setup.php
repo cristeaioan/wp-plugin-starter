@@ -135,13 +135,13 @@ file_put_contents($src_path . 'Core.php', $core_class_contents);
 echo "✅ Created the Core class.\n";
 
 // Dependencies check class.
-$dependent_plugins_array_code = "[\n";
+$dependent_plugins_array_code = "array(\n";
 foreach ( $dependent_plugins as $plugin ) {
     $name = addslashes($plugin['name']);
     $path = addslashes($plugin['path']);
-    $dependent_plugins_array_code .= "\t\t[ 'name' => '{$name}', 'path' => '{$path}' ],\n";
+    $dependent_plugins_array_code .= "\t\t\tarray(\n\t\t\t\t'name' => '{$name}',\n\t\t\t\t'path' => '{$path}'\n\t\t\t),\n";
 }
-$dependent_plugins_array_code .= "\t]";
+$dependent_plugins_array_code .= "\t)";
 
 $dependencies_check_contents = <<<PHP
 <?php
@@ -152,7 +152,7 @@ use td_util;
 class DependenciesCheck {
 
     public function __construct() {
-        \$dependent_theme_name = {$dependent_theme};
+        \$dependent_theme_name = '{$dependent_theme}';
         \$dependent_theme_active = true;
         \$active_theme = wp_get_theme();
 
@@ -167,7 +167,7 @@ class DependenciesCheck {
         \$dependent_plugins = {$dependent_plugins_array_code};
         \$dependent_plugins_inactive = array();
 
-        foreach( \$dependent_plugins as \$dependent_plugin ) {
+        foreach ( \$dependent_plugins as \$dependent_plugin ) {
             if( !is_plugin_active( \$dependent_plugin['path'] ) ) {
                 \$dependent_plugins_inactive[] = \$dependent_plugin;
             }
@@ -214,17 +214,19 @@ file_put_contents($src_path . 'DependenciesCheck.php', $dependencies_check_conte
 echo "✅ Created the DependenciesCheck class.\n";
 
 /*
- * Update composer.json namespace.
+ * Update composer.json.
  */
 $composer_path = __DIR__ . '/../composer.json';
 $composer_json = json_decode(file_get_contents($composer_path), true);
 
+$composer_json['name'] = strtolower(explode('\\', $namespace)[0]) . '/' . $plugin_slug;
 $composer_json['autoload']['psr-4'] = [
     "{$namespace}\\" => "src/"
 ];
+unset($composer_json['scripts']);
 
 file_put_contents($composer_path, json_encode($composer_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-echo "🔁 Updated autoload namespace in composer.json\n";
+echo "🔁 Updated composer.json\n";
 
 /*
  * Run composer dump-autoload.
