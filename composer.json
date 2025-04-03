@@ -11,7 +11,7 @@
   },
   "scripts": {
     "post-create-project-cmd": [
-      "\necho Run 'php scripts/setup.php' to start configure the plugin."
+      "Run 'php scripts/setup.php' to start configuring the plugin."
     ]
   }
 }
