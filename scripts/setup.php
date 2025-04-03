@@ -292,20 +292,10 @@ $composer_json['autoload']['psr-4'] = [
 file_put_contents($composer_path, json_encode($composer_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 echo "🔁 Updated composer.json\n";
 
-$gitDir = __DIR__ . '/.git';
-if (is_dir($gitDir)) {
-    echo "🔄 Removing .git directory to unregister from Git...\n";
-    // Remove the .git directory
-    exec("rm -rf {$gitDir}");
-    echo "✅ Successfully unregistered the project from Git!\n";
-} else {
-    echo "⚠️ No Git repository found to unregister.\n";
-}
-
 /*
  * Run composer dump-autoload.
  */
-echo "⚙️  Running composer dump-autoload...\n";
+echo "⚙️ Running composer dump-autoload...\n";
 exec('composer dump-autoload -o', $output);
 echo implode("\n", $output) . "\n";
 
