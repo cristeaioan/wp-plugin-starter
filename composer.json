@@ -2,6 +2,7 @@
   "name": "cristeaioan/wp-plugin-starter",
   "description": "A starter template for WordPress plugins with dynamic setup.",
   "type": "project",
+  "minimum-stability": "stable",
   "license": "MIT",
   "autoload": {
     "psr-4": {
