@@ -12,11 +12,5 @@
     "post-create-project-cmd": [
       "php scripts/setup.php"
     ]
-  },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/cristeaioan/wp-plugin-starter"
-    }
-  ]
+  }
 }

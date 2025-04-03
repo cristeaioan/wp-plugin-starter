@@ -9,12 +9,12 @@ function prompt( $text, $default = '' ) {
 /*
  * Prompt user for plugin details.
  */
-$plugin_name = prompt("Plugin name", "tagDiv AI Builder");
-$plugin_description = prompt("Plugin description", "tagDiv AI Builder");
-$plugin_author = prompt("Author", "tagDiv");
-$plugin_author_uri = prompt("Author URI", "https://tagdiv.com");
+$plugin_name = prompt("Plugin name");
+$plugin_description = prompt("Plugin description");
+$plugin_author = prompt("Author");
+$plugin_author_uri = prompt("Author URI");
 
-$namespace_input = prompt("Namespace", "TagDiv\\AiBuilder");
+$namespace_input = prompt("Namespace");
 $namespace = trim($namespace_input, '\\');
 
 // Create the plugin slug and constant prefix.
