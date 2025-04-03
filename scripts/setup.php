@@ -9,13 +9,34 @@ function prompt( $text, $default = '' ) {
 /*
  * Prompt user for plugin details.
  */
-$plugin_name = prompt("Plugin name");
-$plugin_description = prompt("Plugin description");
-$plugin_author = prompt("Author");
-$plugin_author_uri = prompt("Author URI");
+$plugin_name = prompt('Plugin name', 'Plugin Name');
+$plugin_description = prompt('Plugin description', 'Plugin Description');
+$plugin_author = prompt('Author', '');
+$plugin_author_uri = prompt('Author URI', '');
 
-$namespace_input = prompt("Namespace");
+$namespace_input = prompt('Namespace', 'TagDiv\PluginName');
 $namespace = trim($namespace_input, '\\');
+
+// Dependencies.
+$dependent_theme = prompt('Dependent theme name');
+
+$add_dependent_plugins = strtolower(prompt('Add dependent plugins (yes/no)?', 'no'));
+$dependent_plugins = array();
+if ( in_array($add_dependent_plugins, array('yes', 'y')) ) {
+    do {
+        $dependent_plugin_name = prompt('→ Plugin name (e.g. tagDiv Composer)');
+        $dependent_plugin_path = prompt('→ Plugin path (e.g. td-composer/td-composer.php)');
+
+        if ( $dependent_plugin_name && $dependent_plugin_path ) {
+            $dependent_plugins[] = array(
+                'name' => $dependent_plugin_name,
+                'path' => $dependent_plugin_path,
+            );
+        }
+
+        $add_another_dependent_plugin = strtolower(prompt('➕ Add another plugin? (yes/no)', 'no'));
+    } while ( in_array($add_another_dependent_plugin, array('yes', 'y')) );
+}
 
 // Create the plugin slug and constant prefix.
 $plugin_slug = strtolower(str_replace(' ', '-', $plugin_name));
@@ -114,6 +135,14 @@ file_put_contents($src_path . 'Core.php', $core_class_contents);
 echo "✅ Created the Core class.\n";
 
 // Dependencies check class.
+$dependent_plugins_array_code = "[\n";
+foreach ( $dependent_plugins as $plugin ) {
+    $name = addslashes($plugin['name']);
+    $path = addslashes($plugin['path']);
+    $dependent_plugins_array_code .= "\t\t[ 'name' => '{$name}', 'path' => '{$path}' ],\n";
+}
+$dependent_plugins_array_code .= "\t]";
+
 $dependencies_check_contents = <<<PHP
 <?php
 
@@ -121,29 +150,21 @@ namespace {$namespace};
 use td_util;
 
 class DependenciesCheck {
+
     public function __construct() {
-        \$dependent_theme_name = 'Newspaper';
+        \$dependent_theme_name = {$dependent_theme};
         \$dependent_theme_active = true;
         \$active_theme = wp_get_theme();
 
-        if( !\$active_theme->exists() || strpos( \$active_theme->name, \$dependent_theme_name ) === false ) {
-            \$dependent_theme_active = false;
+        if ( !empty(\$dependent_theme_name) ) {
+            if ( !\$active_theme->exists() || strpos( \$active_theme->name, \$dependent_theme_name ) === false ) {
+                \$dependent_theme_active = false;
+            }
         }
 
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 
-        \$td_brand = (defined('TD_COMPOSER') && class_exists( 'td_util' )) ? td_util::get_wl_val('tds_wl_brand', 'tagDiv') : 'tagDiv';
-
-        \$dependent_plugins = array(
-            array(
-                'name' => \$td_brand . ' Composer',
-                'path' => 'td-composer/td-composer.php'
-            ),
-            array(
-                'name' => \$td_brand . ' Cloud Library',
-                'path' => 'td-cloud-library/td-cloud-library.php'
-            )
-        );
+        \$dependent_plugins = {$dependent_plugins_array_code};
         \$dependent_plugins_inactive = array();
 
         foreach( \$dependent_plugins as \$dependent_plugin ) {
@@ -185,6 +206,7 @@ class DependenciesCheck {
 
         return true;
     }
+    
 }
 PHP;
 
@@ -208,7 +230,7 @@ echo "🔁 Updated autoload namespace in composer.json\n";
  * Run composer dump-autoload.
  */
 echo "⚙️  Running composer dump-autoload...\n";
-exec('composer dump-autoload', $output);
+exec('composer dump-autoload -o', $output);
 echo implode("\n", $output) . "\n";
 
 
