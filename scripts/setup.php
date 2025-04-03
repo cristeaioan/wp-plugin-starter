@@ -9,13 +9,13 @@ function prompt( $text, $default = '' ) {
 /*
  * Prompt user for plugin details.
  */
-$plugin_name = prompt('Plugin name', 'Plugin Name');
-$plugin_description = prompt('Plugin description', 'Plugin Description');
+$plugin_name = prompt('Plugin name', '');
+$plugin_description = prompt('Plugin description', '');
 $plugin_uri = prompt('Plugin URL', '');
 $plugin_author = prompt('Author', '');
 $plugin_author_uri = prompt('Author URL', '');
 
-$namespace_input = prompt('Namespace', 'TagDiv\PluginName');
+$namespace_input = prompt('Namespace', '');
 $namespace = trim($namespace_input, '\\');
 
 // Dependencies.
@@ -126,7 +126,7 @@ function {$global_function_name}() {
 PHP;
 
 file_put_contents($plugin_file, $plugin_file_contents);
-echo "✅ Created plugin main file: {$plugin_slug}.php\n";
+echo "✅ Created plugin main file: '{$plugin_slug}.php'\n";
 
 // Core class
 $core_class_contents = <<<PHP
@@ -192,7 +192,7 @@ class Core {
 PHP;
 
 file_put_contents($src_path . 'Core.php', $core_class_contents);
-echo "✅ Created the Core class.\n";
+echo "✅ Created the 'Core' class.\n";
 
 // Dependencies check class.
 $dependent_plugins_array_code = "array()";
@@ -276,7 +276,18 @@ class DependenciesCheck {
 PHP;
 
 file_put_contents($src_path . 'DependenciesCheck.php', $dependencies_check_contents);
-echo "✅ Created the DependenciesCheck class.\n";
+echo "✅ Created the 'DependenciesCheck' class.\n";
+
+/*
+ * Create default directories.
+ */
+$directories = array('assets', 'assets/js', 'assets/js/front');
+foreach ( $directories as $directory ) {
+    if ( !is_dir($directory) ) {
+        mkdir($directory, 0755, true);
+        echo "✅ Created the '{$directory}' directory.\n";
+    }
+}
 
 /*
  * Update composer.json.
@@ -299,5 +310,19 @@ echo "⚙️ Running composer dump-autoload...\n";
 exec('composer dump-autoload -o', $output);
 echo implode("\n", $output) . "\n";
 
+/*
+ * Whether to delete the 'scripts' folder.
+ */
+$delete_scripts_folder = strtolower(prompt('Do you want to delete the "scripts" folder? (yes/no)', 'yes'));
+if ( in_array($delete_scripts_folder, array('yes', 'y')) ) {
+    $scriptsFolderPath = __DIR__ . '/scripts';
+    if (is_dir($scriptsFolderPath)) {
+        echo "🔄 Deleting the 'scripts' folder...\n";
+        exec("rm -rf {$scriptsFolderPath}");
+        echo "✅ \"scripts\"' folder deleted.\n";
+    } else {
+        echo "⚠️ The \"scripts\"' folder does not exist.\n";
+    }
+}
 
 echo "\n✅ Setup complete! Your plugin '{$plugin_name}' is ready.\n";
