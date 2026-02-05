@@ -1,32 +1,29 @@
 <?php
 
-function prompt( $text, $default = '' ) {
-    echo $text . ($default ? " [{$default}]" : '') . ": ";
-    $input = trim(fgets(STDIN));
-    return $input ?: $default;
-}
+require_once __DIR__ . '/../scripts/Helpers.php';
+require_once __DIR__ . '/../scripts/Directories.php';
 
 /*
  * Prompt user for plugin details.
  */
-$plugin_name = prompt('Plugin name', '');
-$plugin_description = prompt('Plugin description', '');
-$plugin_uri = prompt('Plugin URL', '');
-$plugin_author = prompt('Author', '');
-$plugin_author_uri = prompt('Author URL', '');
+$plugin_name = Helpers::prompt('Plugin name', '');
+$plugin_description = Helpers::prompt('Plugin description', '');
+$plugin_uri = Helpers::prompt('Plugin URL', '');
+$plugin_author = Helpers::prompt('Author', '');
+$plugin_author_uri = Helpers::prompt('Author URL', '');
 
-$namespace_input = prompt('Namespace', '');
+$namespace_input = Helpers::prompt('Namespace', '');
 $namespace = trim($namespace_input, '\\');
 
 // Dependencies.
-$dependent_theme = prompt('Dependent theme name');
+$dependent_theme = Helpers::prompt('Dependent theme name');
 
-$add_dependent_plugins = strtolower(prompt('Add dependent plugins (yes/no)?', 'no'));
-$dependent_plugins = array();
-if ( in_array($add_dependent_plugins, array('yes', 'y')) ) {
+$add_dependent_plugins = strtolower(Helpers::prompt('Add dependent plugins (yes/no)?', 'no'));
+$dependent_plugins = [];
+if ( Helpers::has_confirmed($add_dependent_plugins) ) {
     do {
-        $dependent_plugin_name = prompt('→ Plugin name');
-        $dependent_plugin_path = prompt('→ Plugin path');
+        $dependent_plugin_name = Helpers::prompt('→ Plugin name');
+        $dependent_plugin_path = Helpers::prompt('→ Plugin path');
 
         if ( $dependent_plugin_name && $dependent_plugin_path ) {
             $dependent_plugins[] = array(
@@ -35,30 +32,18 @@ if ( in_array($add_dependent_plugins, array('yes', 'y')) ) {
             );
         }
 
-        $add_another_dependent_plugin = strtolower(prompt('➕ Add another plugin? (yes/no)', 'no'));
-    } while ( in_array($add_another_dependent_plugin, array('yes', 'y')) );
+        $add_another_dependent_plugin = strtolower(Helpers::prompt('➕ Add another plugin? (yes/no)', 'no'));
+    } while ( Helpers::has_confirmed($add_another_dependent_plugin) );
 }
 
 // Create the plugin slug and constant prefix.
 $plugin_slug = strtolower(str_replace(' ', '-', $plugin_name));
 $plugin_const_prefix = strtoupper(str_replace([' ', '-'], '_', $plugin_slug));
 
-// Make sure src directory exists
-$src_path = __DIR__ . '/../src/';
-if ( !is_dir($src_path) ) {
-    mkdir($src_path, 0755, true);
-}
-
 /*
  * Create default directories.
  */
-$directories = array('assets');
-foreach ( $directories as $directory ) {
-    if ( !is_dir($directory) ) {
-        mkdir($directory, 0755, true);
-        echo "✅ Created the '{$directory}' directory.\n";
-    }
-}
+Directories::init();
 
 /*
  * Generate the required files.
@@ -83,7 +68,7 @@ namespace {$namespace};
 /**
  * Plugin name.
  *
- * @since 1.0.0
+ * @var string
  */
 if ( !defined( '{$plugin_const_prefix}_PLUGIN_NAME' ) ) {
     define( '{$plugin_const_prefix}_PLUGIN_NAME', '{$plugin_name}' );
@@ -92,7 +77,7 @@ if ( !defined( '{$plugin_const_prefix}_PLUGIN_NAME' ) ) {
 /**
  * Plugin version.
  *
- * @since 1.0.0
+ * @var string
  */
 if ( !defined( '{$plugin_const_prefix}_PLUGIN_VER' ) ) {
     define( '{$plugin_const_prefix}_PLUGIN_VER', '1.0.0' );
@@ -101,7 +86,7 @@ if ( !defined( '{$plugin_const_prefix}_PLUGIN_VER' ) ) {
 /**
  * Plugin main file path.
  *
- * @since 1.0.0
+ * @var string
  */
 if ( !defined( '{$plugin_const_prefix}_PLUGIN_FILE' ) ) {
     define( '{$plugin_const_prefix}_PLUGIN_FILE', __FILE__ );
@@ -109,8 +94,6 @@ if ( !defined( '{$plugin_const_prefix}_PLUGIN_FILE' ) ) {
 
 /**
  * Autoloader.
- *
- * @since 1.0.0
  */
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
     require_once __DIR__ . '/vendor/autoload.php';
@@ -118,8 +101,6 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 
 /**
  * Global function holder.
- *
- * @since 1.0.0
  *
  * @return Core
  */
@@ -150,16 +131,12 @@ class Core {
     /**
      * URL to the plugin directory.
      *
-     * @since 1.0.0
-     *
      * @var string
      */
     public \$plugin_url;
 
     /**
      * Path to the plugin directory.
-     *
-     * @since 1.0.0
      *
      * @var string
      */
@@ -168,16 +145,12 @@ class Core {
     /**
      * URL to the plugin assets directory.
      *
-     * @since 1.0.0
-     *
      * @var string
      */
     public \$assets_url;
 
     /**
      * Class constructor.
-     *
-     * @since 1.0.0
      */
     public function __construct() {
         \$this->plugin_url  = rtrim(plugin_dir_url( __DIR__ ), '/\\\');
@@ -188,8 +161,6 @@ class Core {
 
     /**
      * Initializes the class.
-     *
-     * @since 1.0.0
      */
     public function init() {
         /*
@@ -314,8 +285,8 @@ echo implode("\n", $output) . "\n";
 /*
  * Whether to delete the 'scripts' folder.
  */
-$delete_scripts_folder = strtolower(prompt("\nDo you want to delete the 'scripts' folder? (yes/no)", 'yes'));
-if ( in_array($delete_scripts_folder, array('yes', 'y')) ) {
+$delete_scripts_folder = strtolower(Helpers::prompt("\nDo you want to delete the 'scripts' folder? (yes/no)", 'yes'));
+if ( Helpers::has_confirmed($delete_scripts_folder) ) {
     $scripts_folder_path = 'scripts';
     if ( is_dir($scripts_folder_path) ) {
         echo "🔄 Deleting the 'scripts' folder...\n";
