@@ -11,7 +11,10 @@
   },
   "scripts": {
     "post-create-project-cmd": [
-      "echo \uD83D\uDE80 Navigate to the project folder and run 'php scripts/setup.php' to start configuring the plugin."
+      "echo \uD83D\uDE80 Navigate to the project folder and run 'php setup/setup.php' to start configuring the plugin."
     ]
+  },
+  "require": {
+    "ext-json": "*"
   }
 }

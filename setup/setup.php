@@ -1,19 +1,17 @@
 <?php
 
-require_once __DIR__ . '/../scripts/Helpers.php';
-require_once __DIR__ . '/../scripts/Directories.php';
+$setup_path = __DIR__ . '/../setup';
+require_once "$setup_path/Helpers.php";
+require_once "$setup_path/Directories.php";
 
-/*
- * Prompt user for plugin details.
- */
+/** Prompt user for plugin details. */
 $plugin_name = Helpers::prompt('Plugin name', '');
 $plugin_description = Helpers::prompt('Plugin description', '');
 $plugin_uri = Helpers::prompt('Plugin URL', '');
 $plugin_author = Helpers::prompt('Author', '');
 $plugin_author_uri = Helpers::prompt('Author URL', '');
 
-$namespace_input = Helpers::prompt('Namespace', '');
-$namespace = trim($namespace_input, '\\');
+$namespace = trim(Helpers::prompt('Namespace', ''), '\\');
 
 // Dependencies.
 $dependent_theme = Helpers::prompt('Dependent theme name');
@@ -26,10 +24,10 @@ if ( Helpers::has_confirmed($add_dependent_plugins) ) {
         $dependent_plugin_path = Helpers::prompt('→ Plugin path');
 
         if ( $dependent_plugin_name && $dependent_plugin_path ) {
-            $dependent_plugins[] = array(
+            $dependent_plugins[] = [
                 'name' => $dependent_plugin_name,
-                'path' => $dependent_plugin_path,
-            );
+                'path' => $dependent_plugin_path
+            ];
         }
 
         $add_another_dependent_plugin = strtolower(Helpers::prompt('➕ Add another plugin? (yes/no)', 'no'));
@@ -40,14 +38,10 @@ if ( Helpers::has_confirmed($add_dependent_plugins) ) {
 $plugin_slug = strtolower(str_replace(' ', '-', $plugin_name));
 $plugin_const_prefix = strtoupper(str_replace([' ', '-'], '_', $plugin_slug));
 
-/*
- * Create default directories.
- */
+/** Create default directories. */
 Directories::init();
 
-/*
- * Generate the required files.
- */
+/** Generate the required files. */
 // Main plugin file.
 $global_function_name = str_replace('-', '_', $plugin_slug);
 
@@ -70,8 +64,8 @@ namespace {$namespace};
  *
  * @var string
  */
-if ( !defined( '{$plugin_const_prefix}_PLUGIN_NAME' ) ) {
-    define( '{$plugin_const_prefix}_PLUGIN_NAME', '{$plugin_name}' );
+if ( !defined('{$plugin_const_prefix}_PLUGIN_NAME') ) {
+    define('{$plugin_const_prefix}_PLUGIN_NAME', '{$plugin_name}');
 }
 
 /**
@@ -79,8 +73,8 @@ if ( !defined( '{$plugin_const_prefix}_PLUGIN_NAME' ) ) {
  *
  * @var string
  */
-if ( !defined( '{$plugin_const_prefix}_PLUGIN_VER' ) ) {
-    define( '{$plugin_const_prefix}_PLUGIN_VER', '1.0.0' );
+if ( !defined('{$plugin_const_prefix}_PLUGIN_VER') ) {
+    define('{$plugin_const_prefix}_PLUGIN_VER', '1.0.0');
 }
 
 /**
@@ -88,14 +82,14 @@ if ( !defined( '{$plugin_const_prefix}_PLUGIN_VER' ) ) {
  *
  * @var string
  */
-if ( !defined( '{$plugin_const_prefix}_PLUGIN_FILE' ) ) {
-    define( '{$plugin_const_prefix}_PLUGIN_FILE', __FILE__ );
+if ( !defined('{$plugin_const_prefix}_PLUGIN_FILE') ) {
+    define('{$plugin_const_prefix}_PLUGIN_FILE', __FILE__);
 }
 
 /**
  * Autoloader.
  */
-if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+if ( file_exists(__DIR__ . '/vendor/autoload.php') ) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
 
@@ -104,7 +98,8 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
  *
  * @return Core
  */
-function {$global_function_name}() {
+function {$global_function_name}(): Core
+{
     static \$core;
 
     if ( !isset(\$core) ) {
@@ -126,33 +121,35 @@ $core_class_contents = <<<PHP
 
 namespace {$namespace};
 
-class Core {
+class Core
+{
     
     /**
      * URL to the plugin directory.
      *
      * @var string
      */
-    public \$plugin_url;
+    public string \$plugin_url;
 
     /**
      * Path to the plugin directory.
      *
      * @var string
      */
-    public \$plugin_path;
+    public string \$plugin_path;
     
     /**
      * URL to the plugin assets directory.
      *
      * @var string
      */
-    public \$assets_url;
+    public string \$assets_url;
 
     /**
      * Class constructor.
      */
-    public function __construct() {
+    public function __construct()
+    {
         \$this->plugin_url  = rtrim(plugin_dir_url( __DIR__ ), '/\\\');
         \$this->plugin_path = rtrim(plugin_dir_path( __DIR__ ), '/\\\');
         \$this->assets_url = \$this->plugin_url . '/assets';
@@ -162,30 +159,34 @@ class Core {
     /**
      * Initializes the class.
      */
-    public function init() {
+    public function init():void
+    {
         /*
          * Check for theme and plugins dependencies.
          * If at least one of them is not active, then put a full stop to this plugin.
          */
-        new DependenciesCheck();
+        \$dependencies_check = DependenciesCheck();
+        if ( !\$dependencies_check->check() ) {
+            return;
+        }
     }
 
 }
 PHP;
 
-file_put_contents($src_path . 'Core.php', $core_class_contents);
+file_put_contents(Directories::$directories['src'] . 'Core.php', $core_class_contents);
 echo "✅ Created the 'Core' class.\n";
 
 // Dependencies check class.
-$dependent_plugins_array_code = "array()";
+$dependent_plugins_array_code = "[]";
 if ( !empty($dependent_plugins) ) {
-    $dependent_plugins_array_code = "array(\n";
+    $dependent_plugins_array_code = "[\n";
     foreach ( $dependent_plugins as $plugin ) {
         $name = addslashes($plugin['name']);
         $path = addslashes($plugin['path']);
-        $dependent_plugins_array_code .= "\t\t\tarray(\n\t\t\t\t'name' => '{$name}',\n\t\t\t\t'path' => '{$path}'\n\t\t\t),\n";
+        $dependent_plugins_array_code .= "\t\t\t[\n\t\t\t\t'name' => '{$name}',\n\t\t\t\t'path' => '{$path}'\n\t\t\t],\n";
     }
-    $dependent_plugins_array_code .= "\t)";
+    $dependent_plugins_array_code .= "\t]";
 }
 
 $dependencies_check_contents = <<<PHP
@@ -194,9 +195,16 @@ $dependencies_check_contents = <<<PHP
 namespace {$namespace};
 use td_util;
 
-class DependenciesCheck {
+class DependenciesCheck
+{
 
-    public function __construct() {
+    /**
+     * Checks whether the plugin dependencies are met.
+     *
+     * @return bool
+     */
+    public function check(): bool
+    {
         \$dependent_theme_name = '{$dependent_theme}';
         \$dependent_theme_active = true;
         \$active_theme = wp_get_theme();
@@ -257,7 +265,7 @@ class DependenciesCheck {
 }
 PHP;
 
-file_put_contents($src_path . 'DependenciesCheck.php', $dependencies_check_contents);
+file_put_contents(Directories::$directories['src'] . 'DependenciesCheck.php', $dependencies_check_contents);
 echo "✅ Created the 'DependenciesCheck' class.\n";
 
 /*
@@ -275,26 +283,19 @@ unset($composer_json['scripts']);
 file_put_contents($composer_path, json_encode($composer_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 echo "🔁 Updated composer.json\n";
 
-/*
- * Run composer dump-autoload.
- */
+/** Run composer dump-autoload. */
 echo "⚙️ Running composer dump-autoload...\n";
 exec('composer dump-autoload -o', $output);
 echo implode("\n", $output) . "\n";
 
-/*
- * Whether to delete the 'scripts' folder.
- */
-$delete_scripts_folder = strtolower(Helpers::prompt("\nDo you want to delete the 'scripts' folder? (yes/no)", 'yes'));
-if ( Helpers::has_confirmed($delete_scripts_folder) ) {
-    $scripts_folder_path = 'scripts';
-    if ( is_dir($scripts_folder_path) ) {
-        echo "🔄 Deleting the 'scripts' folder...\n";
-        exec("rm -rf {$scripts_folder_path}");
-        echo "✅ 'scripts' folder deleted.\n";
-    } else {
-        echo "⚠️ The 'scripts' folder does not exist.\n";
-    }
+/** Delete the 'setup' folder. */
+$scripts_folder_path = 'setup';
+if ( is_dir($scripts_folder_path) ) {
+    echo "🔄 Deleting the 'setup' folder...\n";
+    exec("rm -rf {$scripts_folder_path}");
+    echo "✅ 'setup' folder deleted.\n";
+} else {
+    echo "⚠️ The 'setup' folder does not exist.\n";
 }
 
 echo "\n✅ Setup complete! Your plugin '{$plugin_name}' is ready.\n";

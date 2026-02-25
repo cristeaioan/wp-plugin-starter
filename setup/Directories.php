@@ -16,10 +16,7 @@ class Directories {
      */
     public static $directories = [
         'src' => 'src',
-        'src_admin' => 'src/Admin',
-        'src_admin_pages' => 'src/Admin/Pages',
-        'src_integrations' => 'src/Integrations',
-        'assets' => 'assets',
+        'assets' => 'assets'
     ];
 
     /**
